@@ -1,19 +1,35 @@
+from lxml.html import fromstring as parse_html
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome
 from datetime import date, timedelta
+from threading import Thread
+import requests
 
 url = "http://www.alkhaleej.ae/Archive?date="
+path = "./articles/"
 
 day = date.today()
 br = Chrome()
+
+
+def scrape_day_links(links, day):
+    with open(path + day + ".txt", "w+", encoding="utf-8") as file:
+        for link in links:
+            content = parse_html(requests.get(link).text).find(".//div[@id='MainContent']")
+            categories = [a.text for a in content.findall(".//div[@id='BreadCrumb']/div/a")[:2]]
+            title = content.find(".//div[@class='Details_MainTitle']").text.strip()
+            body = content.find(".//div[@id='detailedBody']").text_content().replace("\n", "")
+            file.write("\t".join([link[38:], *categories, title, body]) + "\n")
+            print("Added Article:", title)
+
 
 while day.year > 2007:
     links = []
     day -= timedelta(days=1)
     br.get(url + day.strftime("%d/%m/%Y"))
-    for number, block in enumerate(br.find_elements_by_class_name("ArchivingBlock")):
+    for block in br.find_elements_by_class_name("ArchivingBlock"):
         pages = len(block.find_elements_by_class_name("PageNumber"))
         for page in range(pages + 1):
             links.extend(
@@ -25,4 +41,5 @@ while day.year > 2007:
                 WebDriverWait(block, 10).until(
                     ec.text_to_be_present_in_element((By.CLASS_NAME, "activePage"), str(page + 2))
                 )
-    print(links)
+    print("Found", len(links), "Articles in Day:", day.isoformat())
+    Thread(target=scrape_day_links, args=(links, day.isoformat())).start()
