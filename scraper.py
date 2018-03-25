@@ -1,8 +1,6 @@
 from lxml.html import fromstring as parse_html
-from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome
 from datetime import date, timedelta
 from threading import Thread
@@ -41,16 +39,19 @@ while day.year > 2007:
     except TimeoutException: pass
     links = []
     for block in br.find_elements_by_class_name("ArchivingBlock"):
-        pages = len(block.find_elements_by_class_name("PageNumber"))
-        for page in range(pages + 1):
-            links.extend(
-                link.get_attribute("href")
-                for link in block.find_elements_by_xpath(".//ul[@class='ArchivUL']/li/a")
-            )
-            if page != pages:
-                block.find_element_by_xpath(".//span[contains(@class,'NextPage')]/a").click()
-                WebDriverWait(block, 10).until(
-                    ec.text_to_be_present_in_element((By.CLASS_NAME, "activePage"), str(page + 2))
+        for section in block.find_elements_by_class_name("SectionItem"):
+            section.click()
+            WebDriverWait(section, 7).until(lambda section: "Selected" in section.get_attribute("class").split())
+            pages = len(block.find_elements_by_class_name("PageNumber"))
+            for page in range(pages + 1):
+                links.extend(
+                    link.get_attribute("href")
+                    for link in block.find_elements_by_xpath(".//ul[@class='ArchivUL']/li/a")
                 )
+                if page != pages:
+                    block.find_element_by_xpath(".//span[contains(@class,'NextPage')]/a").click()
+                    WebDriverWait(block, 7).until(
+                        lambda block: block.find_element_by_class_name("activePage").text == str(page + 2)
+                    )
     print("Found", len(links), "Articles in Day:", day_string)
     Thread(target=scrape_day_links, args=(links, day_string)).start()
