@@ -1,17 +1,25 @@
 from lxml.html import fromstring as parse_html
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome
 from datetime import date, timedelta
 from threading import Thread
-import requests
+import requests, os
 
 url = "http://www.alkhaleej.ae/Archive?date="
 path = "./articles/"
+scraped_days = []
+
+if not os.path.exists(path):
+    os.makedirs(path)
+else:
+    scraped_days.extend(file[:-4] for file in os.listdir(path))
 
 day = date.today()
 br = Chrome()
+br.set_page_load_timeout(7)
 
 
 def scrape_day_links(links, day):
@@ -26,9 +34,12 @@ def scrape_day_links(links, day):
 
 
 while day.year > 2007:
-    links = []
     day -= timedelta(days=1)
-    br.get(url + day.strftime("%d/%m/%Y"))
+    day_string = day.isoformat()
+    if day_string in scraped_days: continue
+    try: br.get(url + day.strftime("%d/%m/%Y"))
+    except TimeoutException: pass
+    links = []
     for block in br.find_elements_by_class_name("ArchivingBlock"):
         pages = len(block.find_elements_by_class_name("PageNumber"))
         for page in range(pages + 1):
@@ -41,5 +52,5 @@ while day.year > 2007:
                 WebDriverWait(block, 10).until(
                     ec.text_to_be_present_in_element((By.CLASS_NAME, "activePage"), str(page + 2))
                 )
-    print("Found", len(links), "Articles in Day:", day.isoformat())
-    Thread(target=scrape_day_links, args=(links, day.isoformat())).start()
+    print("Found", len(links), "Articles in Day:", day_string)
+    Thread(target=scrape_day_links, args=(links, day_string)).start()
