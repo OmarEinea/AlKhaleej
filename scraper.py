@@ -1,9 +1,9 @@
-from threading import Thread, active_count
-from lxml.html import fromstring as parse_html
+from selenium.common.exceptions import TimeoutException, ElementNotVisibleException
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+from threading import Thread, active_count
+from lxml.html import fromstring as parse
 from selenium.webdriver import Chrome
 from datetime import date, timedelta
 import requests, os, re
@@ -20,7 +20,14 @@ else:
 
 day = date.today()
 threads = []
-br = Chrome()
+br = Chrome(desired_capabilities={
+    "goog:chromeOptions": {
+        # Disable images loading
+        "prefs": {"profile.managed_default_content_settings.images": 2},
+        # Disable Chrome's GUI
+        "args": ["--headless", "--disable-gpu"]
+    }
+})
 br.set_page_load_timeout(7)
 
 
@@ -28,8 +35,7 @@ def scrape_day_links(links, day):
     with open(path + day + ".txt", "w+", encoding="utf-8") as file:
         for link in links:
             try:
-                html = requests.get(link).text
-                content = parse_html(html).find(".//div[@id='MainContent']")
+                content = parse(requests.get(link).text).find(".//div[@id='MainContent']")
                 breadcrumbs = content.findall(".//div[@id='BreadCrumb']/div/a")
                 if len(breadcrumbs) == 0:
                     breadcrumbs = content.findall(".//div[@class='ThebreadCrumbContainer']//a")
@@ -55,7 +61,9 @@ while day.year > 2007:
     try:
         for block in br.find_elements_by_class_name("ArchivingBlock"):
             for section in block.find_elements_by_class_name("SectionItem"):
-                section.click()
+                try: section.click()
+                except ElementNotVisibleException:
+                    br.execute_script("arguments[0].click();", section)
                 WebDriverWait(section, 7).until(lambda section: "Selected" in section.get_attribute("class").split())
                 pages = len(block.find_elements_by_class_name("PageNumber"))
                 for page in range(pages + 1):

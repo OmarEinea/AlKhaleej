@@ -1,3 +1,6 @@
 # Ignore PyCharm project folder and Chrome driver
 .idea/
 chromedriver*
+
+# Ignore output articles folder
+articles/
