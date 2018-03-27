@@ -1,6 +1,7 @@
-# Ignore PyCharm project folder and Chrome driver
+# Ignore Python3 cache and PyCharm project folders
+__pycache__/
 .idea/
-chromedriver*
 
-# Ignore output articles folder
-articles/
+# Ignore output articles folder and Chrome driver
+Articles/
+chromedriver*
