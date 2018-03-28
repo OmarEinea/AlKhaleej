@@ -18,6 +18,7 @@ class LinksScraper(Chrome):
         Chrome.__init__(self, desired_capabilities=self.options)
         # Set page loading timeout to 30 seconds
         self.set_page_load_timeout(7)
+        self.fails = 0
 
     def scrape_day_links(self, date):
         try: self.get(self.url + date)
@@ -44,6 +45,11 @@ class LinksScraper(Chrome):
                                 ec.text_to_be_present_in_element((By.CLASS_NAME, "activePage"), str(page + 2))
                             )
             print("Found", len(links), "Articles in Day:", date)
+            self.fails = 0
             return links
         except Exception as error:
             print("Skipped day", date, "Because of Error", error)
+            self.fails += 1
+            if self.fails > 3:
+                self.close()
+                self.start_session(self.options)
