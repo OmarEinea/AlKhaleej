@@ -65,12 +65,20 @@ def split_articles(n):
 
 
 def split_articles_by_categories():
+    count = 0
+    path = "C:/Users/Omar/Desktop/AlKhaleej"
+    file_path = path + "/{}/{}/{}.txt"
     for article in get_articles():
-        id_, date, category, sub_category, text = article.split("\t", 4)
-        while True:
-            try: outfile = open(f"{category}/{sub_category}.txt", "a", encoding="utf-8")
-            except FileNotFoundError: os.mkdir(category)
-            except OSError: sub_category = sub_category.replace('"', '')
-            else: break
-        outfile.write("\t".join([id_, date, text]))
-        outfile.close()
+        count += 1
+        try:
+            id_, date, category, sub_category, text = article.split("\t", 4)
+            while True:
+                try: outfile = open(file_path.format(category, sub_category, id_), "w+", encoding="utf-8")
+                except FileNotFoundError: os.makedirs(path + "/" + category + "/" + sub_category)
+                except OSError: sub_category = sub_category.replace('"', '')
+                else: break
+            outfile.write(date + "\t" + text)
+            outfile.close()
+        except Exception as error:
+            print(count, repr(article))
+            print(error)
