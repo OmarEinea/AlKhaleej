@@ -6,13 +6,20 @@ articles = "articles.txt"
 links = "links.txt"
 
 
-def combine_articles():
+def combine_articles_and_links():
     with open(articles, "w+", encoding="utf-8") as articles_file, open(links, "w+") as links_file:
         for day_file in os.listdir(folder):
             for article in open(os.path.join(folder, day_file), encoding="utf-8").readlines():
                 link, text = article.split("\t", 1)
                 articles_file.write("\t".join([link.rsplit("-", 1)[1], day_file[:-4], text]))
                 links_file.write(link + "\n")
+
+
+def combine_articles():
+    with open(articles, "w+", encoding="utf-8") as articles_file:
+        for day_file in os.listdir(folder):
+            for article in open(os.path.join(folder, day_file), encoding="utf-8").readlines():
+                articles_file.write(article)
 
 
 def get_link(id_):
@@ -24,7 +31,7 @@ def get_link(id_):
 
 def get_articles():
     if not os.path.isfile(articles):
-        combine_articles()
+        combine_articles_and_links()
     return open(articles, encoding="utf-8")
 
 
