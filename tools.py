@@ -97,3 +97,19 @@ def split_articles_by_categories(out_path, categorize_py=False):
         except Exception as error:
             print(count, repr(article))
             print(error)
+
+
+def convert_to_ridhwan(in_path, out_path, max_limit):
+    for category in os.listdir(in_path):
+        count = 0
+        for file in Path(in_path + "/" + category).glob("**/*.txt"):
+            path = out_path + ("_Train" if count < max_limit / 10 else "_Test")
+            title, article = open(str(file.absolute()), encoding="utf-8").read().split("\t")
+            for _ in range(3):
+                try: open(f"{path}/{category}/{file.name}", "w+", encoding="utf-8").write(f"Body\n{article}")
+                except FileNotFoundError: os.makedirs(path + "/" + category)
+                else:
+                    count += 1
+                    break
+            if count >= max_limit:
+                break
