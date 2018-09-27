@@ -1,5 +1,7 @@
+from pathlib import Path
 import os
 
+desktop = os.path.expanduser("~/Desktop/")
 root_url = "http://www.alkhaleej.ae/"
 folder = "Articles"
 articles = "articles.txt"
@@ -11,7 +13,7 @@ def combine_articles_and_links():
         for day_file in os.listdir(folder):
             for article in open(os.path.join(folder, day_file), encoding="utf-8").readlines():
                 link, text = article.split("\t", 1)
-                articles_file.write("\t".join([link.rsplit("-", 1)[1], day_file[:-4], text]))
+                articles_file.write("\t".join([link, day_file[:-4], text]))
                 links_file.write(link + "\n")
 
 
@@ -19,7 +21,7 @@ def combine_articles():
     with open(articles, "w+", encoding="utf-8") as articles_file:
         for day_file in os.listdir(folder):
             for article in open(os.path.join(folder, day_file), encoding="utf-8").readlines():
-                articles_file.write(article)
+                articles_file.write(article.replace("\t", f"\t{day_file[:-4]}\t", 1))
 
 
 def get_link(id_):
@@ -71,20 +73,26 @@ def split_articles(n):
         outfile.write(article)
 
 
-def split_articles_by_categories():
+def split_articles_by_categories(out_path, categorize_py=False):
     count = 0
-    path = "C:/Users/Omar/Desktop/AlKhaleej"
-    file_path = path + "/{}/{}/{}.txt"
+    file_path = out_path + "/{}/{}.txt"
     for article in get_articles():
         count += 1
         try:
-            id_, date, category, sub_category, text = article.split("\t", 4)
+            if categorize_py:
+                parts = article.split("\t")
+                id_ = parts[0]
+                text = "\t".join(parts[-2:])
+                categories = "/".join(parts[1:-2])
+            else:
+                id_, date, category, sub_category, text = article.split("\t", 4)
+                categories = category + "/" + sub_category
             while True:
-                try: outfile = open(file_path.format(category, sub_category, id_), "w+", encoding="utf-8")
-                except FileNotFoundError: os.makedirs(path + "/" + category + "/" + sub_category)
-                except OSError: sub_category = sub_category.replace('"', '')
+                try: outfile = open(file_path.format(categories, id_.rsplit("-", 1)[1]), "w+", encoding="utf-8")
+                except FileNotFoundError: os.makedirs(out_path + "/" + categories)
+                except OSError: categories = categories.replace('"', '')
                 else: break
-            outfile.write(date + "\t" + text)
+            outfile.write(text)
             outfile.close()
         except Exception as error:
             print(count, repr(article))
