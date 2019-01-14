@@ -1,7 +1,8 @@
+from os.path import join, expanduser, isfile
+from os import listdir, makedirs
 from pathlib import Path
-import os
 
-desktop = os.path.expanduser("~/Desktop/")
+desktop = expanduser("~/Desktop/")
 root_url = "http://www.alkhaleej.ae/"
 folder = "Articles"
 articles = "articles.txt"
@@ -10,8 +11,8 @@ links = "links.txt"
 
 def combine_articles_and_links():
     with open(articles, "w+", encoding="utf-8") as articles_file, open(links, "w+") as links_file:
-        for day_file in os.listdir(folder):
-            for article in open(os.path.join(folder, day_file), encoding="utf-8").readlines():
+        for day_file in listdir(folder):
+            for article in open(join(folder, day_file), encoding="utf-8").readlines():
                 link, text = article.split("\t", 1)
                 articles_file.write("\t".join([link, day_file[:-4], text]))
                 links_file.write(link + "\n")
@@ -19,9 +20,16 @@ def combine_articles_and_links():
 
 def combine_articles():
     with open(articles, "w+", encoding="utf-8") as articles_file:
-        for day_file in os.listdir(folder):
-            for article in open(os.path.join(folder, day_file), encoding="utf-8").readlines():
+        for day_file in listdir(folder):
+            for article in open(join(folder, day_file), encoding="utf-8").readlines():
                 articles_file.write(article.replace("\t", f"\t{day_file[:-4]}\t", 1))
+
+
+def combine_articles_text():
+    with open(articles.replace(".", "_text."), "w+", encoding="utf-8") as articles_file:
+        for day_file in listdir(folder):
+            for article in open(join(folder, day_file), encoding="utf-8").read().splitlines():
+                articles_file.write(article.rsplit("\t", 1)[1] + "\n")
 
 
 def get_link(id_):
@@ -32,7 +40,7 @@ def get_link(id_):
 
 
 def get_articles():
-    if not os.path.isfile(articles):
+    if not isfile(articles):
         combine_articles_and_links()
     return open(articles, encoding="utf-8")
 
@@ -89,7 +97,7 @@ def split_articles_by_categories(out_path, categorize_py=False):
                 categories = category + "/" + sub_category
             while True:
                 try: outfile = open(file_path.format(categories, id_.rsplit("-", 1)[1]), "w+", encoding="utf-8")
-                except FileNotFoundError: os.makedirs(out_path + "/" + categories)
+                except FileNotFoundError: makedirs(out_path + "/" + categories)
                 except OSError: categories = categories.replace('"', '')
                 else: break
             outfile.write(text)
@@ -100,14 +108,14 @@ def split_articles_by_categories(out_path, categorize_py=False):
 
 
 def convert_to_ridhwan(in_path, out_path, max_limit):
-    for category in os.listdir(in_path):
+    for category in listdir(in_path):
         count = 0
         for file in Path(in_path + "/" + category).glob("**/*.txt"):
             path = out_path + ("_Train" if count < max_limit / 10 else "_Test")
             title, article = open(str(file.absolute()), encoding="utf-8").read().split("\t")
             for _ in range(3):
                 try: open(f"{path}/{category}/{file.name}", "w+", encoding="utf-8").write(f"Body\n{article}")
-                except FileNotFoundError: os.makedirs(path + "/" + category)
+                except FileNotFoundError: makedirs(path + "/" + category)
                 else:
                     count += 1
                     break

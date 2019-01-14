@@ -8,7 +8,7 @@ import re
 class ArticlesScraper(Thread):
     whitespaces = re.compile("\s+")
 
-    def __init__(self, links, outfile, sub_category):
+    def __init__(self, links, outfile, sub_category=False):
         super().__init__()
         self.links = links
         self.outfile = outfile
